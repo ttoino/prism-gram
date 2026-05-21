@@ -1,7 +1,7 @@
 import {
     extract,
-    type LetterparserMail,
     type LetterparserAttachment,
+    type LetterparserMail,
     parseHeaders,
 } from "letterparser";
 
@@ -10,7 +10,8 @@ const replyToPattern = /^reply\+(.+)\+(.+)@toino\.pt$/;
 const blacklistedHeaderPattern =
     /^(?:ARC-.*|Bcc|Cc|CFBL-Address|CFBL-Feedback-ID|Content-Transfer-Encoding|Content-Type|Date|DKIM-Signature|Feedback-ID|From|Message-ID|MIME-Version|Received|Reply-To|Return-Path|Subject|TLS-Report-Domain|TLS-Report-Submitter|TLS-Required|To)$/i;
 
-const whitelistedHeaderPattern = /^(?:Archived-At|Auto-Submitted|Comments|Content-Language|Importance|In-Reply-To|Keywords|List-Archive|List-Help|List-Id|List-Owner|List-Post|List-Subscribe|List-Unsubscribe-Post|List-Unsubscribe|Organization|Precedence|References|Require-Recipient-Valid-Since|Sensitivity|X-[A-Za-z0-9\-_]+)$/i;
+const whitelistedHeaderPattern =
+    /^(?:Archived-At|Auto-Submitted|Comments|Content-Language|Importance|In-Reply-To|Keywords|List-Archive|List-Help|List-Id|List-Owner|List-Post|List-Subscribe|List-Unsubscribe-Post|List-Unsubscribe|Organization|Precedence|References|Require-Recipient-Valid-Since|Sensitivity|X-[A-Za-z0-9\-_]+)$/i;
 
 const decode = async (stream: ReadableStream<Uint8Array<ArrayBufferLike>>) => {
     const reader = stream.getReader();
@@ -45,10 +46,10 @@ const convertAttachment = (
     attachment: LetterparserAttachment,
 ): EmailAttachment => ({
     content: attachment.body,
-    filename: attachment.filename,
-    type: attachment.contentType,
     contentId: attachment.contentId,
     disposition: "attachment",
+    filename: attachment.filename,
+    type: attachment.contentType,
 });
 
 const convertMailbox = (mailbox: LetterparserMail["from"] & object): string =>
@@ -89,20 +90,23 @@ export default {
             console.debug("Parsed the message headers", originalHeaders);
 
             const reply: Parameters<SendEmail["send"]>[0] = {
-                from: originalTo,
-                to: originalFrom,
-                cc: originalMessage.cc?.map(convertMailbox),
-                bcc: originalMessage.bcc?.map(convertMailbox),
-                subject: originalMessage.subject ?? "Re: ",
-                text: originalMessage.text,
-                html: originalMessage.html,
                 attachments:
                     originalMessage.attachments?.map(convertAttachment),
+                bcc: originalMessage.bcc?.map(convertMailbox),
+                cc: originalMessage.cc?.map(convertMailbox),
+                from: originalTo,
                 headers: Object.fromEntries(
                     Object.entries(originalHeaders).filter(
-                        ([k, v]) => !blacklistedHeaderPattern.test(k) && whitelistedHeaderPattern.test(k) && !!v,
+                        ([k, v]) =>
+                            !blacklistedHeaderPattern.test(k) &&
+                            whitelistedHeaderPattern.test(k) &&
+                            !!v,
                     ) as [string, string][],
                 ),
+                html: originalMessage.html,
+                subject: originalMessage.subject ?? "Re: ",
+                text: originalMessage.text,
+                to: originalFrom,
             };
 
             console.debug("Replying", reply);

@@ -1,22 +1,36 @@
 {
-	"name": "toinomail",
-	"version": "0.0.0",
-	"private": true,
-	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"cf-typegen": "wrangler types"
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
-		"@types/node": "^25.9.1",
-		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.93.0"
-	},
-	"dependencies": {
-		"letterparser": "^0.1.8"
-	}
+    "name": "toinomail",
+    "version": "0.0.0",
+	"type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "test": "vitest",
+        "check": "tsc --noEmit",
+        "lint": "eslint .",
+        "lint:fix": "eslint --fix .",
+        "format": "prettier --check .",
+        "format:fix": "prettier --write .",
+        "gen": "pnpm run gen:cf-types",
+        "gen:cf-types": "wrangler types"
+    },
+    "dependencies": {
+        "letterparser": "^0.1.8"
+    },
+    "devDependencies": {
+        "@cloudflare/vitest-pool-workers": "^0.12.4",
+        "@eslint/compat": "^2.1.0",
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^25.9.1",
+        "eslint": "^10.4.0",
+        "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-perfectionist": "^5.9.0",
+        "globals": "^17.6.0",
+        "prettier": "^3.8.3",
+        "typescript": "^5.5.2",
+        "typescript-eslint": "^8.59.4",
+        "vitest": "~3.2.0",
+        "wrangler": "^4.93.0"
+    }
 }
