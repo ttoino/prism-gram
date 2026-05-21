@@ -1,130 +1,55 @@
 import {
-    extract,
-    type LetterparserAttachment,
-    type LetterparserMail,
-    parseHeaders,
-} from "letterparser";
-
-const replyToPattern = /^reply\+(.+)\+(.+)@toino\.pt$/;
-
-const blacklistedHeaderPattern =
-    /^(?:ARC-.*|Bcc|Cc|CFBL-Address|CFBL-Feedback-ID|Content-Transfer-Encoding|Content-Type|Date|DKIM-Signature|Feedback-ID|From|Message-ID|MIME-Version|Received|Reply-To|Return-Path|Subject|TLS-Report-Domain|TLS-Report-Submitter|TLS-Required|To)$/i;
-
-const whitelistedHeaderPattern =
-    /^(?:Archived-At|Auto-Submitted|Comments|Content-Language|Importance|In-Reply-To|Keywords|List-Archive|List-Help|List-Id|List-Owner|List-Post|List-Subscribe|List-Unsubscribe-Post|List-Unsubscribe|Organization|Precedence|References|Require-Recipient-Valid-Since|Sensitivity|X-[A-Za-z0-9\-_]+)$/i;
-
-const decode = async (stream: ReadableStream<Uint8Array<ArrayBufferLike>>) => {
-    const reader = stream.getReader();
-
-    try {
-        const chunks = [];
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-        }
-
-        // Convert to string
-        const decoder = new TextDecoder();
-        const rawContent = decoder.decode(
-            new Uint8Array(
-                chunks.reduce(
-                    (acc, chunk) => [...acc, ...chunk],
-                    [] as number[],
-                ),
-            ),
-        );
-
-        return rawContent;
-    } finally {
-        reader.releaseLock();
-    }
-};
-
-const convertAttachment = (
-    attachment: LetterparserAttachment,
-): EmailAttachment => ({
-    content: attachment.body,
-    contentId: attachment.contentId,
-    disposition: "attachment",
-    filename: attachment.filename,
-    type: attachment.contentType,
-});
-
-const convertMailbox = (mailbox: LetterparserMail["from"] & object): string =>
-    mailbox.address;
+    FORWARDING_DOMAIN,
+    FORWARDING_EMAIL_ADDRESSES,
+    SENDING_DOMAIN,
+    SENDING_PATTERN,
+} from "./constants";
+import { parseEmail } from "./mime";
 
 export default {
-    email: async (message, env, ctx) => {
-        console.debug("Received an email", message);
-
-        const match = message.to.match(replyToPattern);
-
-        console.debug("Tested the address", match);
+    email: async (message, env) => {
+        const match = message.to.match(SENDING_PATTERN);
 
         if (match) {
-            console.debug("The address does match, replying");
+            const password = match["password"];
+            const from = match["from"] + "@" + FORWARDING_DOMAIN;
+            const to = match["to"].replace("%", "@");
 
-            const originalFrom = match[1].replace("%", "@");
-            const originalTo = match[2].replace("%", "@");
+            console.debug("from", from, "to", to);
 
-            console.debug(
-                "Parsed the address:",
-                "from",
-                originalFrom,
-                "to",
-                originalTo,
-            );
+            if (password !== env.SENDING_PASSWORD) {
+                console.warn("Wrong password!");
+                message.setReject("Wrong password");
+                return;
+            }
 
-            const rawMessage = await decode(message.raw);
+            const originalMessage = await parseEmail(message);
 
-            console.debug("Decoded the message", rawMessage);
+            console.debug("Parsed email", originalMessage);
 
-            const originalMessage = extract(rawMessage);
-
-            console.debug("Parsed the message", originalMessage);
-
-            const originalHeaders = parseHeaders(rawMessage);
-
-            console.debug("Parsed the message headers", originalHeaders);
-
-            const reply: Parameters<SendEmail["send"]>[0] = {
-                attachments:
-                    originalMessage.attachments?.map(convertAttachment),
-                bcc: originalMessage.bcc?.map(convertMailbox),
-                cc: originalMessage.cc?.map(convertMailbox),
-                from: originalTo,
-                headers: Object.fromEntries(
-                    Object.entries(originalHeaders).filter(
-                        ([k, v]) =>
-                            !blacklistedHeaderPattern.test(k) &&
-                            whitelistedHeaderPattern.test(k) &&
-                            !!v,
-                    ) as [string, string][],
-                ),
-                html: originalMessage.html,
-                subject: originalMessage.subject ?? "Re: ",
-                text: originalMessage.text,
-                to: originalFrom,
+            const send: Parameters<SendEmail["send"]>[0] = {
+                ...originalMessage,
+                from,
+                to,
             };
 
-            console.debug("Replying", reply);
+            const result = await env.EMAIL.send(send);
 
-            const result = await env.EMAIL.send(reply);
-
-            console.debug("Replied", result);
+            console.debug("Send the message", result);
         } else {
-            console.debug("The address does not match, forwarding");
+            const headers = new Headers({
+                "Reply-To": `${message.to.replace(`@${FORWARDING_DOMAIN}`, "")}+${message.from.replace("@", "%")}@${SENDING_DOMAIN}`,
+            });
 
-            const result = await message.forward(
-                "joaoapereira21@hotmail.com",
-                new Headers({
-                    "Reply-To": `reply+${message.from.replace("@", "%")}+${message.to.replace("@", "%")}@toino.pt`,
-                }),
+            await Promise.all(
+                FORWARDING_EMAIL_ADDRESSES.map((address) =>
+                    message
+                        .forward(address, headers)
+                        .then((result) =>
+                            console.debug("Forwarded the message", result),
+                        ),
+                ),
             );
-
-            console.debug("Forwarded the message", result);
         }
     },
 } satisfies ExportedHandler<Env>;
