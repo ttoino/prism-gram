@@ -11,21 +11,20 @@ export default {
         const match = message.to.match(SENDING_PATTERN);
 
         if (match) {
-            const password = match["password"];
             const from = match["from"] + "@" + FORWARDING_DOMAIN;
             const to = match["to"].replace("%", "@");
 
             console.debug("from", from, "to", to);
+            
+            const originalMessage = await parseEmail(message);
+            
+            console.debug("Parsed email", originalMessage);
 
-            if (password !== env.SENDING_PASSWORD) {
+            if (originalMessage.from.name !== env.SENDING_PASSWORD) {
                 console.warn("Wrong password!");
                 message.setReject("Wrong password");
                 return;
             }
-
-            const originalMessage = await parseEmail(message);
-
-            console.debug("Parsed email", originalMessage);
 
             const send: Parameters<SendEmail["send"]>[0] = {
                 ...originalMessage,

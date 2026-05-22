@@ -7,7 +7,7 @@ export const FORWARDING_PATTERN = new RegExp(`^.+@${FORWARDING_DOMAIN}$`);
 
 export const SENDING_DOMAIN = "send.toino.pt";
 export const SENDING_PATTERN = new RegExp(
-    `^(?<password>[a-zA-Z0-9]+) <(?<from>[^%]+)\\+(?<to>[^%]+%[^%]+)@${SENDING_DOMAIN}>$`,
+    `^(?<from>[^%]+)\\+(?<to>[^%]+%[^%]+)@${SENDING_DOMAIN}$`,
 );
 
 export const HEADERS_BLACKLIST_PATTERN =
