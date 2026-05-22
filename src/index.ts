@@ -21,7 +21,10 @@ export default {
                     console.error("Error parsing email", error.message),
             );
 
-            console.debug("Parsed email", originalMessage);
+            console.debug(
+                "Parsed email",
+                JSON.stringify(originalMessage, null, 4),
+            );
 
             if (originalMessage.from.name !== env.SENDING_PASSWORD) {
                 console.warn("Wrong password!");
