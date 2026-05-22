@@ -26,11 +26,11 @@ export default {
                 JSON.stringify(originalMessage, null, 4),
             );
 
-            if (originalMessage.to[0].name !== env.SENDING_PASSWORD) {
+            if (originalMessage.to[0].name !== process.env.SENDING_PASSWORD) {
                 console.warn(
                     "Wrong password!",
                     "Expected",
-                    env.SENDING_PASSWORD,
+                    process.env.SENDING_PASSWORD,
                 );
                 message.setReject("Wrong password");
                 return;
