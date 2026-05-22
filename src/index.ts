@@ -26,7 +26,7 @@ export default {
                 JSON.stringify(originalMessage, null, 4),
             );
 
-            if (originalMessage.from.name !== env.SENDING_PASSWORD) {
+            if (originalMessage.to[0].name !== env.SENDING_PASSWORD) {
                 console.warn("Wrong password!");
                 message.setReject("Wrong password");
                 return;
