@@ -7,6 +7,9 @@
     "upload_source_maps": true,
     "workers_dev": false,
     "preview_urls": false,
+    "limits": {
+        "cpu_ms": 300000,
+    },
     "observability": {
         "enabled": true,
         "logs": {
@@ -22,4 +25,7 @@
             "remote": true,
         },
     ],
+    "secrets": {
+        "required": ["SENDING_PASSWORD"]
+    },
 }
