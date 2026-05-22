@@ -27,7 +27,11 @@ export default {
             );
 
             if (originalMessage.to[0].name !== env.SENDING_PASSWORD) {
-                console.warn("Wrong password!");
+                console.warn(
+                    "Wrong password!",
+                    "Expected",
+                    env.SENDING_PASSWORD,
+                );
                 message.setReject("Wrong password");
                 return;
             }
