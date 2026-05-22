@@ -11,8 +11,8 @@ export default {
         const match = message.to.match(SENDING_PATTERN);
 
         if (match) {
-            const from = match["from"] + "@" + FORWARDING_DOMAIN;
-            const to = match["to"].replace("%", "@");
+            const from = match.groups!.from + "@" + FORWARDING_DOMAIN;
+            const to = match.groups!.to.replace("%", "@");
 
             console.debug("from", from, "to", to);
             
