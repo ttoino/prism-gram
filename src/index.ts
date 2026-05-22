@@ -15,9 +15,12 @@ export default {
             const to = match.groups!.to.replace("%", "@");
 
             console.debug("from", from, "to", to);
-            
-            const originalMessage = await parseEmail(message);
-            
+
+            const originalMessage = await parseEmail(message).catch(
+                (error: Error) =>
+                    console.error("Error parsing email", error.message),
+            );
+
             console.debug("Parsed email", originalMessage);
 
             if (originalMessage.from.name !== env.SENDING_PASSWORD) {
@@ -34,7 +37,7 @@ export default {
 
             const result = await env.EMAIL.send(send);
 
-            console.debug("Send the message", result);
+            console.debug("Sent the message", result);
         } else {
             const headers = new Headers({
                 "Reply-To": `${message.to.replace(`@${FORWARDING_DOMAIN}`, "")}+${message.from.replace("@", "%")}@${SENDING_DOMAIN}`,

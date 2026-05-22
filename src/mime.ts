@@ -57,9 +57,7 @@ export const parseEmail = async (
 
     return {
         attachments: extracted.attachments?.map(convertAttachment),
-        bcc: extracted.bcc,
-        cc: extracted.cc,
-        from: extracted.from,
+        from: extracted.from!,
         headers: Object.fromEntries(
             Object.entries(headers).filter(
                 ([k, v]) =>
@@ -69,8 +67,8 @@ export const parseEmail = async (
             ) as [string, string][],
         ),
         html: extracted.html,
-        subject: extracted.subject,
+        subject: extracted.subject!,
         text: extracted.text,
-        to: extracted.to,
+        to: extracted.to!,
     };
 };
