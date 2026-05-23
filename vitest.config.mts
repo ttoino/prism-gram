@@ -1,17 +1,19 @@
-import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { defineConfig } from "vitest/config";
 
-export default defineWorkersConfig({
+export default defineConfig({
+    plugins: [
+        cloudflareTest({
+            miniflare: {
+                vars: {
+                    SENDING_PASSWORD: "test-password",
+                },
+            },
+            remoteBindings: false,
+            wrangler: { configPath: "./wrangler.jsonc" },
+        }),
+    ],
     test: {
         exclude: ["node_modules/**", ".direnv/**"],
-        poolOptions: {
-            workers: {
-                defines: {
-                    "process.env.SENDING_PASSWORD":
-                        JSON.stringify("test-password"),
-                },
-                remoteBindings: false,
-                wrangler: { configPath: "./wrangler.jsonc" },
-            },
-        },
     },
 });
