@@ -1,41 +1,61 @@
-# Cloudflare Workers
+# prism-gram
 
-STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Always retrieve current documentation before any Workers, KV, R2, D1, Durable Objects, Queues, Vectorize, AI, or Agents SDK task.
+Email-processing Cloudflare Worker. Handles inbound emails: forwards them or re-sends them via the `EMAIL` binding depending on the recipient domain.
 
-## Docs
+## What this worker actually does
 
-- https://developers.cloudflare.com/workers/
-- MCP: `https://docs.mcp.cloudflare.com/mcp`
+- **Entry point**: `src/index.ts` — exports an `email` handler, **not** `fetch`.
+- Two code paths based on `message.to`:
+    - `*.@send.toino.pt` → parses the raw MIME email with `letterparser`, validates a password against `SENDING_PASSWORD`, and re-sends via `env.EMAIL.send()`.
+    - `*@toino.pt` → forwards to hard-coded addresses in `src/constants.ts` with a `Reply-To` header.
 
-For all limits and quotas, retrieve from the product's `/platform/limits/` page. eg. `/workers/platform/limits`
+## Toolchain
 
-## Commands
+- **Package manager**: `pnpm` (required version in `packageManager` field).
+- **Runtime**: Cloudflare Workers, `compatibility_date: 2026-05-20`, `nodejs_compat` flag.
+- **Test runner**: `@cloudflare/vitest-pool-workers` (not plain vitest).
 
-| Command               | Purpose                   |
-| --------------------- | ------------------------- |
-| `npx wrangler dev`    | Local development         |
-| `npx wrangler deploy` | Deploy to Cloudflare      |
-| `npx wrangler types`  | Generate TypeScript types |
+## Common commands
 
-Run `wrangler types` after changing bindings in wrangler.jsonc.
+| Command             | Purpose                                                      |
+| ------------------- | ------------------------------------------------------------ |
+| `pnpm install`      | Install dependencies                                         |
+| `pnpm dev`          | `wrangler dev` — local dev                                   |
+| `pnpm deploy`       | `wrangler deploy` — deploy to Cloudflare                     |
+| `pnpm gen:cf-types` | Regenerate `worker-configuration.d.ts` from `wrangler.jsonc` |
+| `pnpm check`        | `tsc --noEmit` — typecheck                                   |
+| `pnpm lint`         | ESLint                                                       |
+| `pnpm lint:fix`     | ESLint --fix                                                 |
+| `pnpm format`       | Prettier check                                               |
+| `pnpm format:fix`   | Prettier write                                               |
+| `pnpm test`         | Run vitest tests                                             |
 
-## Node.js Compatibility
+## Verification order
 
-https://developers.cloudflare.com/workers/runtime-apis/nodejs/
+The CI runs format, lint, typecheck, and test in parallel, **except** typecheck depends on generated types:
 
-## Errors
+```
+pnpm install
+pnpm gen:cf-types   # must run before check
+pnpm check
+pnpm test
+pnpm lint
+pnpm format
+```
 
-- **Error 1102** (CPU/Memory exceeded): Retrieve limits from `/workers/platform/limits/`
-- **All errors**: https://developers.cloudflare.com/workers/observability/errors/
+## Code style
 
-## Product Docs
+- ESLint uses `typescript-eslint` **strict** + `perfectionist/recommended-alphabetical`.
+- Perfectionist sorts imports, exports, objects, etc. alphabetically.
+- Use `// @sort` comments to create partitions that sort independently.
+- Prettier: 4-space indent, double quotes, trailing commas everywhere.
 
-Retrieve API references and limits from:
-`/kv/` · `/r2/` · `/d1/` · `/durable-objects/` · `/queues/` · `/vectorize/` · `/workers-ai/` · `/agents/`
+## Important files / gotchas
 
-## Best Practices (conditional)
-
-If the application uses Durable Objects or Workflows, refer to the relevant best practices:
-
-- Durable Objects: https://developers.cloudflare.com/durable-objects/best-practices/rules-of-durable-objects/
-- Workflows: https://developers.cloudflare.com/workflows/build/rules-of-workflows/
+- `worker-configuration.d.ts` is **gitignored** and auto-generated. Do not hand-edit it.
+- `wrangler.jsonc` defines:
+    - `send_email` binding named `EMAIL`
+    - Required secret: `SENDING_PASSWORD`
+    - CPU limit: `300000` ms
+    - `workers_dev: false` (custom domain deployment only)
+- The worker only handles `email` events — no `fetch` handler.

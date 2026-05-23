@@ -26,6 +26,6 @@
         },
     ],
     "secrets": {
-        "required": ["SENDING_PASSWORD"]
+        "required": ["SENDING_PASSWORD"],
     },
 }

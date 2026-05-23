@@ -1,14 +1,17 @@
 import {
     extract,
-    parseHeaders,
     type LetterparserAttachment,
+    parseHeaders,
 } from "letterparser";
+
 import {
     HEADERS_BLACKLIST_PATTERN,
     HEADERS_WHITELIST_PATTERN,
 } from "./constants";
 
-const decode = async (stream: ReadableStream<Uint8Array<ArrayBufferLike>>) => {
+export const decode = async (
+    stream: ReadableStream<Uint8Array<ArrayBufferLike>>,
+) => {
     const reader = stream.getReader();
 
     try {
@@ -37,19 +40,46 @@ const decode = async (stream: ReadableStream<Uint8Array<ArrayBufferLike>>) => {
     }
 };
 
-const convertAttachment = (
+export const convertAttachment = (
     attachment: LetterparserAttachment,
-): EmailAttachment => ({
-    content: attachment.body,
-    contentId: attachment.contentId,
-    disposition: "attachment",
-    filename: attachment.filename,
-    type: attachment.contentType,
-});
+): EmailAttachment => {
+    if (attachment.contentId) {
+        return {
+            content: attachment.body,
+            contentId: attachment.contentId,
+            disposition: "inline",
+            filename: attachment.filename ?? "",
+            type: attachment.contentType.type,
+        };
+    }
+
+    return {
+        content: attachment.body,
+        disposition: "attachment",
+        filename: attachment.filename ?? "",
+        type: attachment.contentType.type,
+    };
+};
+
+export interface ParsedEmail {
+    attachments?: EmailAttachment[];
+    from: Mailbox;
+    headers: Record<string, string>;
+    html?: string;
+    subject: string;
+    text?: string;
+    to: Mailbox[];
+}
+
+interface Mailbox {
+    address: string;
+    name?: string;
+    raw: string;
+}
 
 export const parseEmail = async (
     message: ForwardableEmailMessage,
-): Promise<Parameters<SendEmail["send"]>[0]> => {
+): Promise<ParsedEmail> => {
     const rawMessage = await decode(message.raw);
 
     const extracted = extract(rawMessage);
@@ -57,7 +87,7 @@ export const parseEmail = async (
 
     return {
         attachments: extracted.attachments?.map(convertAttachment),
-        from: extracted.from!,
+        from: extracted.from ?? { address: "", raw: "" },
         headers: Object.fromEntries(
             Object.entries(headers).filter(
                 ([k, v]) =>
@@ -67,8 +97,8 @@ export const parseEmail = async (
             ) as [string, string][],
         ),
         html: extracted.html,
-        subject: extracted.subject!,
+        subject: extracted.subject ?? "",
         text: extracted.text,
-        to: extracted.to!,
+        to: extracted.to ?? [],
     };
 };

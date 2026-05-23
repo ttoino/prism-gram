@@ -10,9 +10,9 @@ export default {
     email: async (message, env) => {
         const match = message.to.match(SENDING_PATTERN);
 
-        if (match) {
-            const from = match.groups!.from + "@" + FORWARDING_DOMAIN;
-            const to = match.groups!.to.replace("%", "@");
+        if (match?.groups) {
+            const from = match.groups.from + "@" + FORWARDING_DOMAIN;
+            const to = match.groups.to.replace("%", "@");
 
             console.debug("from", from, "to", to);
 
@@ -21,24 +21,32 @@ export default {
                     console.error("Error parsing email", error.message),
             );
 
+            if (!originalMessage) {
+                message.setReject("Failed to parse email");
+                return;
+            }
+
             console.debug(
                 "Parsed email",
                 JSON.stringify(originalMessage, null, 4),
             );
 
-            if (originalMessage.to[0].name !== process.env.SENDING_PASSWORD) {
-                console.warn(
-                    "Wrong password!",
-                    "Expected",
-                    process.env.SENDING_PASSWORD,
-                );
+            const password =
+                process.env.SENDING_PASSWORD ?? env.SENDING_PASSWORD;
+
+            if (originalMessage.to[0].name !== password) {
+                console.warn("Wrong password!", "Expected", password);
                 message.setReject("Wrong password");
                 return;
             }
 
             const send: Parameters<SendEmail["send"]>[0] = {
-                ...originalMessage,
+                attachments: originalMessage.attachments,
                 from,
+                headers: originalMessage.headers,
+                html: originalMessage.html,
+                subject: originalMessage.subject,
+                text: originalMessage.text,
                 to,
             };
 
