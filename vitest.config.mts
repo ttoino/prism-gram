@@ -9,6 +9,7 @@ export default defineWorkersConfig({
                     "process.env.SENDING_PASSWORD":
                         JSON.stringify("test-password"),
                 },
+                remoteBindings: false,
                 wrangler: { configPath: "./wrangler.jsonc" },
             },
         },
