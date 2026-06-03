@@ -1,11 +1,16 @@
-export const FORWARDING_EMAIL_ADDRESSES = [
-    "joaoapereira21@hotmail.com",
-    "jonny4547.3@gmail.com",
-];
-export const FORWARDING_DOMAIN = "toino.pt";
+import { env } from "cloudflare:workers";
+
+export const {
+    ACCOUNT_ID,
+    CLOUDFLARE_API_TOKEN,
+    FORWARDING_DOMAIN,
+    SENDING_DOMAIN,
+    SENDING_PASSWORD,
+    ZONE_ID,
+} = env;
+
 export const FORWARDING_PATTERN = new RegExp(`^.+@${FORWARDING_DOMAIN}$`);
 
-export const SENDING_DOMAIN = "send.toino.pt";
 export const SENDING_PATTERN = new RegExp(
     `^(?<from>[^%]+)\\+(?<to>[^%]+%[^%]+)@${SENDING_DOMAIN}$`,
 );

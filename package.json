@@ -16,6 +16,7 @@
         "gen:cf-types": "wrangler types"
     },
     "dependencies": {
+        "cloudflare": "^6.3.0",
         "letterparser": "^0.1.8"
     },
     "devDependencies": {

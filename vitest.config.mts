@@ -5,7 +5,8 @@ export default defineConfig({
     plugins: [
         cloudflareTest({
             miniflare: {
-                vars: {
+                bindings: {
+                    CLOUDFLARE_API_TOKEN: "test-token",
                     SENDING_PASSWORD: "test-password",
                 },
             },

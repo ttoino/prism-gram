@@ -5,14 +5,45 @@ import {
 import { env } from "cloudflare:workers";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-    FORWARDING_DOMAIN,
-    FORWARDING_EMAIL_ADDRESSES,
-    SENDING_DOMAIN,
-} from "../src/constants";
+import { FORWARDING_DOMAIN, SENDING_DOMAIN } from "../src/constants";
 import worker from "../src/index";
 
 const TEST_PASSWORD = "test-password";
+
+const { FORWARDING_EMAIL_ADDRESSES } = vi.hoisted(() => ({
+    FORWARDING_EMAIL_ADDRESSES: [
+        "forward-a@example.com",
+        "forward-b@example.com",
+    ],
+}));
+
+vi.mock("cloudflare", () => {
+    const iter = <T>(items: T[]) => ({
+        async *[Symbol.asyncIterator]() {
+            yield* items;
+        },
+    });
+
+    return {
+        default: class {
+            emailRouting = {
+                addresses: {
+                    list: vi.fn(() =>
+                        iter(
+                            FORWARDING_EMAIL_ADDRESSES.map((email) => ({
+                                email,
+                                verified: "2024-01-01T00:00:00Z",
+                            })),
+                        ),
+                    ),
+                },
+                rules: {
+                    list: vi.fn(() => iter([])),
+                },
+            };
+        },
+    };
+});
 
 function createRawMime(
     overrides: {

@@ -25,7 +25,13 @@
             "remote": true,
         },
     ],
+    "vars": {
+        "ACCOUNT_ID": "e024e5a1e487a3d3a07815b431986107",
+        "FORWARDING_DOMAIN": "toino.pt",
+        "SENDING_DOMAIN": "send.toino.pt",
+        "ZONE_ID": "176e8d0662f9d794ad70131efd5ebb32",
+    },
     "secrets": {
-        "required": ["SENDING_PASSWORD"],
+        "required": ["CLOUDFLARE_API_TOKEN", "SENDING_PASSWORD"],
     },
 }
