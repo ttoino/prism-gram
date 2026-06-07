@@ -1,0 +1,8 @@
+# Changes here will be overwritten by Copier
+_commit: 71de313
+_src_path: gh:ttoino/templates
+description: Email-processing Cloudflare Worker
+name: prism-gram
+tests: true
+type: worker
+
