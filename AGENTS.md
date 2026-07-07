@@ -55,7 +55,7 @@ All jobs use `pnpm install --frozen-lockfile`.
 
 - **Entry point**: `src/index.ts` — exports an `email` handler, **not** `fetch`. It just runs `forward` and `send` (from `src/email.ts`) concurrently.
 - Two code paths based on `message.to`:
-    - `*@send.toino.pt` → `send`: parses the raw MIME email with `letterparser`, validates a password against `SENDING_PASSWORD`, and re-sends via `env.EMAIL.send()`.
+    - `*@send.toino.pt` → `send`: parses the raw MIME email with `postal-mime`, validates a password against `SENDING_PASSWORD`, and re-sends via `env.EMAIL.send()`.
     - `*@toino.pt` → `forward`: adds a `Reply-To` header and forwards to the recipients resolved by `getRule()` in `src/rules.ts` — the per-`to` Email Routing forward rules, falling back to **all verified destination addresses**.
 
 ### Module map

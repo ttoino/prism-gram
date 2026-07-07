@@ -1,8 +1,4 @@
-import {
-    extract,
-    type LetterparserAttachment,
-    parseHeaders,
-} from "letterparser";
+import PostalMime, { Address } from "postal-mime";
 
 import {
     HEADERS_BLACKLIST_PATTERN,
@@ -40,65 +36,63 @@ export const decode = async (
     }
 };
 
-export const convertAttachment = (
-    attachment: LetterparserAttachment,
-): EmailAttachment => {
-    if (attachment.contentId) {
-        return {
-            content: attachment.body,
-            contentId: attachment.contentId,
-            disposition: "inline",
-            filename: attachment.filename ?? "",
-            type: attachment.contentType.type,
-        };
-    }
+const postalMime = new PostalMime();
 
-    return {
-        content: attachment.body,
-        disposition: "attachment",
-        filename: attachment.filename ?? "",
-        type: attachment.contentType.type,
-    };
-};
+const normalizeAddress = (address?: Address): EmailAddress[] =>
+    address
+        ? address.group
+            ? normalizeAddresses(address.group)
+            : [
+                  {
+                      email: address.address,
+                      name: address.name,
+                  },
+              ]
+        : [];
 
-export interface ParsedEmail {
-    attachments?: EmailAttachment[];
-    from: Mailbox;
-    headers: Record<string, string>;
-    html?: string;
-    subject: string;
-    text?: string;
-    to: Mailbox[];
-}
-
-interface Mailbox {
-    address: string;
-    name?: string;
-    raw: string;
-}
+const normalizeAddresses = (addresses?: Address[]): EmailAddress[] =>
+    addresses?.flatMap(normalizeAddress) ?? [];
 
 export const parseEmail = async (
     message: ForwardableEmailMessage,
-): Promise<ParsedEmail> => {
+) => {
     const rawMessage = await decode(message.raw);
-
-    const extracted = extract(rawMessage);
-    const headers = parseHeaders(rawMessage);
+    const parsedMessage = await postalMime.parse(rawMessage);
 
     return {
-        attachments: extracted.attachments?.map(convertAttachment),
-        from: extracted.from ?? { address: "", raw: "" },
-        headers: Object.fromEntries(
-            Object.entries(headers).filter(
-                ([k, v]) =>
-                    !HEADERS_BLACKLIST_PATTERN.test(k) &&
-                    HEADERS_WHITELIST_PATTERN.test(k) &&
-                    !!v,
-            ) as [string, string][],
+        attachments: parsedMessage.attachments.map((attachment) =>
+            attachment.disposition === "attachment"
+                ? {
+                      content: attachment.content,
+                      disposition: "attachment",
+                      filename: attachment.filename ?? "",
+                      type: attachment.mimeType,
+                  }
+                : {
+                      content: attachment.content,
+                      contentId: attachment.contentId ?? "",
+                      disposition: "inline",
+                      filename: attachment.filename ?? "",
+                      type: attachment.mimeType,
+                  },
         ),
-        html: extracted.html,
-        subject: extracted.subject ?? "",
-        text: extracted.text,
-        to: extracted.to ?? [],
-    };
+        bcc: normalizeAddresses(parsedMessage.bcc),
+        cc: normalizeAddresses(parsedMessage.cc),
+        from: normalizeAddress(parsedMessage.from ?? parsedMessage.sender)[0],
+        headers: Object.fromEntries(
+            parsedMessage.headers
+                .filter(
+                    ({ key, value }) =>
+                        !HEADERS_BLACKLIST_PATTERN.test(key) &&
+                        HEADERS_WHITELIST_PATTERN.test(key) &&
+                        !!value,
+                )
+                .map(({ key, value }) => [key, value]),
+        ),
+        html: parsedMessage.html,
+        replyTo: normalizeAddresses(parsedMessage.replyTo).at(0),
+        subject: parsedMessage.subject ?? "",
+        text: parsedMessage.text,
+        to: normalizeAddresses(parsedMessage.to),
+    } satisfies Parameters<Env["EMAIL"]["send"]>[0];
 };
