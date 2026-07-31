@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 
 export const {
     ACCOUNT_ID,
-    CLOUDFLARE_API_TOKEN,
+    API_TOKEN,
     FORWARDING_DOMAIN,
     SENDING_DOMAIN,
     SENDING_PASSWORD,

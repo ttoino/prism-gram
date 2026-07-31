@@ -1,6 +1,6 @@
 import Cloudflare from "cloudflare";
 
-import { ACCOUNT_ID, CLOUDFLARE_API_TOKEN, ZONE_ID } from "./constants";
+import { ACCOUNT_ID, API_TOKEN, ZONE_ID } from "./constants";
 
 const addresses = new Set<string>();
 const rules = new Map<string, Set<string>>();
@@ -8,7 +8,7 @@ const rules = new Map<string, Set<string>>();
 let loaded: Promise<void> | undefined;
 
 const load = async () => {
-    const client = new Cloudflare({ apiToken: CLOUDFLARE_API_TOKEN });
+    const client = new Cloudflare({ apiToken: API_TOKEN });
 
     for await (const address of client.emailRouting.addresses.list({
         account_id: ACCOUNT_ID,

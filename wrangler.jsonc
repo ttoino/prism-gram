@@ -34,6 +34,6 @@
         "ZONE_ID": "176e8d0662f9d794ad70131efd5ebb32",
     },
     "secrets": {
-        "required": ["CLOUDFLARE_API_TOKEN", "SENDING_PASSWORD"],
+        "required": ["API_TOKEN", "SENDING_PASSWORD"],
     },
 }
