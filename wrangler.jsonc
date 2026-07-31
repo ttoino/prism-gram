@@ -19,10 +19,12 @@
             "enabled": true,
         },
     },
+    "addresses": [
+        "*@toino.pt"
+    ],
     "send_email": [
         {
             "name": "EMAIL",
-            "remote": true,
         },
     ],
     "vars": {
