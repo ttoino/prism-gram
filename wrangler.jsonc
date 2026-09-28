@@ -23,9 +23,7 @@
             "enabled": true,
         },
     },
-    "addresses": [
-        "*@toino.pt"
-    ],
+    "addresses": ["*@toino.pt"],
     "send_email": [
         {
             "name": "EMAIL",

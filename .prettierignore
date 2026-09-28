@@ -9,6 +9,8 @@ flake.lock
 dist/
 build/
 .svelte-kit/
+src/**/*.js
+src/**/*.js.map
 
 # Copier
 .copier-answers.yml

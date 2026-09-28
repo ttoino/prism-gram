@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { convertAttachment, decode, parseEmail } from "../src/mime";
+import { decode, parseEmail } from "../src/mime";
 
 function createRawStream(content: string): ReadableStream<Uint8Array> {
     return new ReadableStream({
@@ -33,30 +33,6 @@ describe("decode", () => {
     });
 });
 
-describe("convertAttachment", () => {
-    it("maps letterparser attachment to EmailAttachment", () => {
-        const attachment = {
-            body: "binary content",
-            contentId: "<abc123>",
-            contentType: {
-                parameters: {},
-                type: "application/pdf",
-            },
-            filename: "document.pdf",
-        };
-
-        const result = convertAttachment(attachment);
-
-        expect(result).toEqual({
-            content: "binary content",
-            contentId: "<abc123>",
-            disposition: "inline",
-            filename: "document.pdf",
-            type: "application/pdf",
-        });
-    });
-});
-
 describe("parseEmail", () => {
     it("extracts basic fields from a simple MIME message", async () => {
         const mime = [
@@ -82,18 +58,16 @@ describe("parseEmail", () => {
         const result = await parseEmail(message);
 
         expect(result.from).toEqual({
-            address: "sender@example.com",
-            name: undefined,
-            raw: "sender@example.com",
+            email: "sender@example.com",
+            name: "",
         });
         expect(result.subject).toBe("Hello");
-        expect(result.text).toBe("Body text here");
+        expect(result.text).toBe("Body text here\n");
         expect(result.html).toBe("");
         expect(result.to).toEqual([
             {
-                address: "recipient@example.com",
+                email: "recipient@example.com",
                 name: "Display Name",
-                raw: '"Display Name" <recipient@example.com>',
             },
         ]);
     });
@@ -123,14 +97,14 @@ describe("parseEmail", () => {
         const result = await parseEmail(message);
 
         // Blacklisted headers should be removed
-        expect(result.headers).not.toHaveProperty("From");
-        expect(result.headers).not.toHaveProperty("To");
-        expect(result.headers).not.toHaveProperty("Subject");
-        expect(result.headers).not.toHaveProperty("Content-Type");
+        expect(result.headers).not.toHaveProperty("from");
+        expect(result.headers).not.toHaveProperty("to");
+        expect(result.headers).not.toHaveProperty("subject");
+        expect(result.headers).not.toHaveProperty("content-type");
 
         // Whitelisted custom headers should be kept
-        expect(result.headers).toHaveProperty("X-Custom-Header");
-        expect(result.headers).toHaveProperty("In-Reply-To");
+        expect(result.headers).toHaveProperty("x-custom-header");
+        expect(result.headers).toHaveProperty("in-reply-to");
     });
 
     it("drops unknown headers not in whitelist", async () => {
@@ -156,7 +130,7 @@ describe("parseEmail", () => {
 
         const result = await parseEmail(message);
 
-        expect(result.headers).not.toHaveProperty("Unknown-Header");
+        expect(result.headers).not.toHaveProperty("unknown-header");
     });
 
     it("converts attachments", async () => {
